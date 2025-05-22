@@ -22,7 +22,10 @@ else:
 ARQUIVOS = {
     "ZZZ_ProspBlocks.dwg": get_resource_path(os.path.join("resources", "ZZZ_ProspBlocks.dwg")),
     "run_sondagens.scr": get_resource_path(os.path.join("resources", "run_sondagens.scr")),
+    "ImportLogsPlanta.lsp": get_resource_path(os.path.join("resources", "ImportLogsPlanta.lsp")),
+    "run_logsplanta.scr": get_resource_path(os.path.join("resources", "run_logsplanta.scr")),
     "LogTransformMultiple.lsp": get_resource_path(os.path.join("resources", "LogTransformMultiple.lsp"))
+
 }
 
 def encontrar_acad():
@@ -78,7 +81,111 @@ class MainMenu:
         root_log.mainloop()
 
     def import_logs_planta(self):
-        messagebox.showinfo("ImportLogsPlanta", "Funcionalidade ainda por implementar.")
+        self.master.destroy()
+        root_import = tk.Tk()
+        import_app = ImportLogsPlanta(root_import)
+        root_import.mainloop()
+
+class ImportLogsPlanta:
+    def __init__(self, master):
+        self.master = master
+        master.title("ImportLogsPlanta")
+        master.geometry("500x140")
+        master.resizable(False, False)
+
+        self.ficheiro_dwg = ""
+        self.pasta = ""
+
+        titulo = ttk.Label(master, text="ImportLogsPlanta", font=("Segoe UI", 16, "bold"))
+        titulo.pack(pady=(10, 5))
+
+        frame = ttk.Frame(master, padding=20)
+        frame.pack(fill="both", expand=True)
+        frame.columnconfigure(0, weight=1)
+
+        ttk.Label(frame, text="Ficheiro DWG:").grid(row=0, column=0, sticky="e", padx=5, pady=5)
+        self.dwg_entry = ttk.Entry(frame, width=45, state="readonly")
+        self.dwg_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.btn_browser = ttk.Button(frame, text="Procurar", command=self.selecionar_ficheiro_dwg)
+        self.btn_browser.grid(row=0, column=2, padx=5, pady=5)
+
+        self.btn_gerar = ttk.Button(frame, text="Gerar", command=self.gerar)
+        self.btn_gerar.grid(row=1, column=0, padx=5, pady=10)
+
+        self.btn_cancelar = ttk.Button(frame, text="Cancelar", command=self.master.quit)
+        self.btn_cancelar.grid(row=1, column=1, padx=5, pady=10)
+
+        self.btn_concluir = ttk.Button(frame, text="Concluir", command=self.limpar_arquivos, state="disabled")
+        self.btn_concluir.grid(row=1, column=2, padx=5, pady=10)
+
+    def selecionar_ficheiro_dwg(self):
+        ficheiro = filedialog.askopenfilename(filetypes=[("Ficheiros DWG", "*.dwg")])
+        if ficheiro:
+            self.ficheiro_dwg = ficheiro
+            self.pasta = os.path.dirname(ficheiro)
+            self.dwg_entry.config(state="normal")
+            self.dwg_entry.delete(0, tk.END)
+            self.dwg_entry.insert(0, self.ficheiro_dwg)
+            self.dwg_entry.config(state="readonly")
+
+    def gerar(self):
+        if not self.ficheiro_dwg or not os.path.isfile(self.ficheiro_dwg):
+            messagebox.showerror("Erro", "Seleciona um ficheiro DWG válido primeiro!")
+            return
+
+        try:
+            for nome in ["ZZZ_ProspBlocks.dwg", "run_logsplanta.scr", "ImportLogsPlanta.lsp"]:
+                shutil.copyfile(ARQUIVOS[nome], os.path.join(self.pasta, nome))
+
+            ficheiros_csv = [f for f in os.listdir(self.pasta) if f.lower().endswith(".csv")]
+            if not ficheiros_csv:
+                messagebox.showerror("Erro", "Nenhum ficheiro .csv encontrado na pasta do DWG.")
+                return
+
+            caminho_lsp = os.path.join(self.pasta, "ImportLogsPlanta.lsp")
+            caminho_dwg_bloques = os.path.join(self.pasta, "ZZZ_ProspBlocks.dwg").replace("\\", "/")
+            caminho_csv = os.path.join(self.pasta, ficheiros_csv[0]).replace("\\", "/")
+
+            with open(caminho_lsp, "r", encoding="utf-8") as f:
+                conteudo_lsp = f.read()
+
+            conteudo_lsp = re.sub(r'\(setq ficheiroBlocos\s+"[^"]+"\)', f'(setq ficheiroBlocos "{caminho_dwg_bloques}")', conteudo_lsp)
+            conteudo_lsp = re.sub(r'\(setq ficheiroCsv\s+"[^"]+"\)', f'(setq ficheiroCsv "{caminho_csv}")', conteudo_lsp)
+
+            with open(caminho_lsp, "w", encoding="utf-8") as f:
+                f.write(conteudo_lsp)
+
+            caminho_scr = os.path.join(self.pasta, "run_logsplanta.scr")
+            with open(caminho_scr, "r", encoding="utf-8") as f:
+                conteudo_scr = f.read()
+
+            caminho_lsp_escaped = caminho_lsp.replace("\\", "/")
+            conteudo_scr = re.sub(r'\(load\s+"[^"]*ImportLogsPlanta\.lsp"\)', f'(load "{caminho_lsp_escaped}")', conteudo_scr)
+
+            with open(caminho_scr, "w", encoding="utf-8") as f:
+                f.write(conteudo_scr)
+
+            # Executa o AutoCAD com o DWG selecionado e o script
+            subprocess.Popen([ACAD_PATH, self.ficheiro_dwg, "/b", caminho_scr])
+
+            self.btn_concluir.config(state="normal")
+
+        except Exception as e:
+            messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
+
+    def limpar_arquivos(self):
+        try:
+            for nome in ["ImportLogsPlanta.lsp", "run_logsplanta.scr", "ZZZ_ProspBlocks.dwg"]:
+                caminho = os.path.join(self.pasta, nome)
+                if os.path.exists(caminho):
+                    os.remove(caminho)
+            messagebox.showinfo("Limpeza", "Processo concluído.")
+            self.master.quit()
+            self.master.destroy()
+        except Exception as e:
+            messagebox.showwarning("Aviso", f"Erro ao eliminar ficheiros: {e}")
+            self.btn_concluir.config(state="disabled")
+
 
 
 class LogTransform:
@@ -203,6 +310,7 @@ class LogTransform:
             messagebox.showwarning("Aviso", f"Erro ao eliminar ficheiros: {e}")
 
             self.btn_concluir.config(state="disabled")
+
 
 
 if __name__ == "__main__":

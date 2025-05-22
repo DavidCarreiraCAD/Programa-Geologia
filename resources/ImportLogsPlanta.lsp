@@ -1,8 +1,8 @@
 (defun c:ImportLogsPlanta ( / ficheiroCsv ficheiroBlocos acadApp thisDoc sourceDoc blocks dados fatorCorrigido)
 
   ;; === CONFIGURAÇÕES ===
-  (setq ficheiroBlocos "C:\\Users\\DPC\\OneDrive - COBAGroup\\Desktop\\DPC\\AutoLisp\\ImportLogsPlanta\\ProspBlocks.dwg")
-  (setq ficheiroCsv    "C:\\Users\\DPC\\OneDrive - COBAGroup\\Desktop\\DPC\\AutoLisp\\ImportLogsPlanta\\GT_RW-Exemplo.csv")
+  (setq ficheiroBlocos "C:/Users/DPC/OneDrive - COBAGroup/Desktop/DPC/AutoLisp/ImportLogsPlanta/ProspBlocks.dwg")
+  (setq ficheiroCsv    "C:/Users/DPC/OneDrive - COBAGroup/Desktop/DPC/AutoLisp/ImportLogsPlanta/GT_RW-Exemplo.csv")
 
   (princ "\n[1/3] A importar blocos...")
 
@@ -130,7 +130,7 @@
     (setq depois (entlast))
 
     ;; Inserir bloco MIRA_cor
-    (command "_.-INSERT" (strcat "MIRA_" cor) "_non" pt 25 25 0)
+    (command "_.-INSERT" (strcat "MIRA_" cor) "_non" pt 0.025 0.025 0)
 
     ;; Atualizar atributo do bloco principal
     (if (and depois (tblsearch "BLOCK" bloco))
