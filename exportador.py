@@ -42,24 +42,62 @@ if not ACAD_PATH:
     messagebox.showerror("Erro", "Não foi encontrada nenhuma instalação do AutoCAD nas versões 2023 a 2026.")
     sys.exit(1)
 
-
-class App:
+class MainMenu:
     def __init__(self, master):
         self.master = master
-        master.title("Modificador de Logs")
+        master.title("Seleciona o Comando")
+        master.geometry("350x300")
+        master.configure(bg="#f2f2f2")
+        master.resizable(False, False)
+
+        frame = ttk.Frame(master, padding=20)
+        frame.pack(expand=True)
+
+        # Título estilizado
+        titulo = ttk.Label(frame, text="Seleciona o Comando", font=("Segoe UI", 14, "bold"))
+        titulo.pack(pady=(0, 20))
+
+        # Estilo de botões uniforme
+        estilo = ttk.Style()
+        estilo.configure("TButton", font=("Segoe UI", 11), padding=10)
+
+        # Botões
+        btn_logtransform = ttk.Button(frame, text="LogTransform", command=self.abrir_logtransform)
+        btn_logtransform.pack(fill="x", pady=5)
+
+        btn_importlogs = ttk.Button(frame, text="ImportLogsPlanta", command=self.import_logs_planta)
+        btn_importlogs.pack(fill="x", pady=5)
+
+        btn_cancelar = ttk.Button(frame, text="Cancelar", command=master.quit)
+        btn_cancelar.pack(fill="x", pady=5)
+
+    def abrir_logtransform(self):
+        self.master.destroy()
+        root_log = tk.Tk()
+        app_log = LogTransform(root_log)
+        root_log.mainloop()
+
+    def import_logs_planta(self):
+        messagebox.showinfo("ImportLogsPlanta", "Funcionalidade ainda por implementar.")
+
+
+class LogTransform:
+    def __init__(self, master):
+        self.master = master
+        master.title("LogTransform")
         master.geometry("500x160")
         master.resizable(False, False)
 
         self.pasta = ""
 
-        titulo = ttk.Label(master, text="Modificador de Logs", font=("Segoe UI", 16, "bold"))
+        titulo = ttk.Label(master, text="LogTransform", font=("Segoe UI", 16, "bold"))
         titulo.pack(pady=(10, 5))
 
         frame = ttk.Frame(master, padding=20)
         frame.pack(fill="both", expand=True)
         frame.columnconfigure(0, weight=1)
 
-        ttk.Label(frame, text="Selecionar Pasta:").grid(row=0, column=0, sticky="e", padx=5, pady=5)
+        ttk.Label(frame, text="Pasta:").grid(row=0, column=0, sticky="e", padx=5, pady=5)
         self.pasta_entry = ttk.Entry(frame, width=45, state="readonly")
         self.pasta_entry.grid(row=0, column=1, padx=5, pady=5)
         self.btn_browser = ttk.Button(frame, text="Procurar", command=self.selecionar_pasta)
@@ -169,5 +207,5 @@ class App:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = App(root)
+    main_menu = MainMenu(root)
     root.mainloop()

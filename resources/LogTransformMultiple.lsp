@@ -316,9 +316,7 @@
   correspondencias
 )
 
-;; ========================== PRINCIPAL ============================
-
-
+;; ========================== PRINCIPAL ==========================
 (setq correspondencias (ler-correspondencias))
 (setq ss (ssget "X" '((0 . "TEXT") (40 . 3.6))))
 
@@ -347,12 +345,12 @@
             (setq y (- y 19.5673)) ; default deslocamento S
           )
 
-(setq newPt (list x y z))
+          (setq newPt (list x y z))
 (setq layer (cdr (assoc 8 eData))) ; obter layer do texto
 (entdel ent)
 
-;; Corrigir fator para compensar bloco com escala interna 24.5
-(setq fatorCorrigido (/ fator 24.5))
+;; Corrigir fator para compensar bloco com escala interna 12
+(setq fatorCorrigido (* fator 12))
 
 ;; Inserir o bloco
 (command "_.-INSERT" bloco newPt fatorCorrigido fatorCorrigido 0)
@@ -362,6 +360,7 @@
 (if blkEnt
   (entmod (subst (cons 8 layer) (assoc 8 (entget blkEnt)) (entget blkEnt)))
 )
+
 
           ;; Atualizar atributos
           (setq blkEnt (entlast))
