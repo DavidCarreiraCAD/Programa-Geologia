@@ -38,33 +38,34 @@
         (setq content (strcase (cdr (assoc 1 entData))))
         (setq height (cdr (assoc 40 entData)))
 
-        ;; Mover e rodar certos textos
-        (setq moveY
-          (cond
-            ((= content "NSPT") (* 6.0 fator))
-            ((= content "LU/LF") (* 7.7 fator))
-            ((= content "REC/RQD") (* 12.0 fator))
-            (T nil)
-          )
-        )
+(setq moveY
+  (cond
+    ((= content "NSPT") (* 6.0 fator))
+    ((= content "LU/LF") (* 7.7 fator))
+    ((= content "REC/RQD") (* 12.0 fator))
+    ((= content "PMT") (* 6.0 fator))
+    (T nil)
+  )
+  moveX
+  (if (= content "PMT") (* 2.0 fator) 0.0)
+)
 
         (if moveY
           (progn
             (setq entData (subst (cons 50 (/ pi 2)) (assoc 50 entData) entData))
             (setq alignPt (assoc 11 entData))
             (if alignPt
-              (setq entData (subst
-                              (cons 11 (list (car (cdr alignPt))
-                                            (+ (cadr (cdr alignPt)) moveY)
-                                            (caddr (cdr alignPt))))
-                              alignPt entData))
+(setq entData (subst
+                (cons 11 (list (+ (car (cdr alignPt)) moveX)
+                               (+ (cadr (cdr alignPt)) moveY)
+                               (caddr (cdr alignPt))))
+                alignPt entData))
               (progn
-                (setq insPt (assoc 10 entData))
-                (setq entData (subst
-                                (cons 10 (list (car (cdr insPt))
-                                               (+ (cadr (cdr insPt)) moveY)
-                                               (caddr (cdr insPt))))
-                                insPt entData))
+(setq entData (subst
+                (cons 10 (list (+ (car (cdr insPt)) moveX)
+                               (+ (cadr (cdr insPt)) moveY)
+                               (caddr (cdr insPt))))
+                insPt entData))
               )
             )
           )
@@ -151,6 +152,9 @@
                                ("F" . 7.2)
                                ("REC/RQD" . 10.368)
                                ("LU/LF" . 4.32)
+                               ("PMT" . 4.32)
+                               ("N20" . 15.9826)
+                               ("U0/U2" . 28.7986)
                                ("NSPT" . 10.368)))
 
   (foreach lyr logLayers
@@ -389,6 +393,20 @@
 
 (setvar "ATTDIA" 1)
 (setvar "ATTREQ" 1)
+
+;; Renomeia todas as layers "Log_*" para "Coba_GEO_Log*"
+(setq layerTable (vla-get-Layers doc))
+(foreach lyr logLayers
+  (setq newName (strcat "Coba_GEO_" lyr))
+  (if (not (tblsearch "LAYER" newName)) ; evita conflito se já existir
+    (progn
+      (setq lyrObj (vla-Item layerTable lyr))
+      (vla-put-Name lyrObj newName)
+      (princ (strcat "\n🔁 Layer renomeada: " lyr " → " newName))
+    )
+    (princ (strcat "\n⚠ Layer de destino já existe: " newName ", não foi renomeada."))
+  )
+)
 
 (princ "\n✅ Substituição concluída com escala e move adaptados.")
 (princ)

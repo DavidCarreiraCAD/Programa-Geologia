@@ -65,7 +65,7 @@ class MainMenu:
         estilo.configure("TButton", font=("Segoe UI", 11), padding=10)
 
         # Botões
-        btn_logtransform = ttk.Button(frame, text="LogTransform", command=self.abrir_logtransform)
+        btn_logtransform = ttk.Button(frame, text="Modificador de Logs", command=self.abrir_logtransform)
         btn_logtransform.pack(fill="x", pady=5)
 
         btn_importlogs = ttk.Button(frame, text="ImportLogsPlanta", command=self.import_logs_planta)
@@ -90,33 +90,62 @@ class ImportLogsPlanta:
     def __init__(self, master):
         self.master = master
         master.title("ImportLogsPlanta")
-        master.geometry("500x140")
         master.resizable(False, False)
 
         self.ficheiro_dwg = ""
         self.pasta = ""
+        self.ficheiro_csv = ""
 
-        titulo = ttk.Label(master, text="ImportLogsPlanta", font=("Segoe UI", 16, "bold"))
-        titulo.pack(pady=(10, 5))
 
-        frame = ttk.Frame(master, padding=20)
+        # Estilo visual
+        style = ttk.Style()
+        style.configure("TButton", padding=6)
+        style.configure("TLabel", padding=4)
+
+        # Título
+        titulo = ttk.Label(master, text="ImportLogsPlanta", font=("Segoe UI", 18, "bold"))
+        titulo.pack(pady=(15, 10))
+
+        # Frame principal
+        frame = ttk.Frame(master, padding=(20, 10))
         frame.pack(fill="both", expand=True)
-        frame.columnconfigure(0, weight=1)
 
+        # Campo de seleção DWG
         ttk.Label(frame, text="Ficheiro DWG:").grid(row=0, column=0, sticky="e", padx=5, pady=5)
         self.dwg_entry = ttk.Entry(frame, width=45, state="readonly")
-        self.dwg_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.dwg_entry.grid(row=0, column=1, padx=5, pady=5, sticky="we")
         self.btn_browser = ttk.Button(frame, text="Procurar", command=self.selecionar_ficheiro_dwg)
         self.btn_browser.grid(row=0, column=2, padx=5, pady=5)
 
-        self.btn_gerar = ttk.Button(frame, text="Gerar", command=self.gerar)
-        self.btn_gerar.grid(row=1, column=0, padx=5, pady=10)
+        frame.columnconfigure(1, weight=1)  # Expand entry field
 
-        self.btn_cancelar = ttk.Button(frame, text="Cancelar", command=self.master.quit)
-        self.btn_cancelar.grid(row=1, column=1, padx=5, pady=10)
+        # Campo de seleção CSV
+        ttk.Label(frame, text="Ficheiro CSV:").grid(row=1, column=0, sticky="e", padx=5, pady=5)
+        self.csv_entry = ttk.Entry(frame, width=45, state="readonly")
+        self.csv_entry.grid(row=1, column=1, padx=5, pady=5, sticky="we")
+        self.btn_csv_browser = ttk.Button(frame, text="Procurar", command=self.selecionar_ficheiro_csv)
+        self.btn_csv_browser.grid(row=1, column=2, padx=5, pady=5)
 
-        self.btn_concluir = ttk.Button(frame, text="Concluir", command=self.limpar_arquivos, state="disabled")
-        self.btn_concluir.grid(row=1, column=2, padx=5, pady=10)
+        # Botões organizados em sub-frame centralizado
+        botoes_frame = ttk.Frame(master)
+        botoes_frame.pack(pady=(10, 15))
+
+        self.btn_gerar = ttk.Button(botoes_frame, text="Iniciar", command=self.gerar)
+        self.btn_gerar.grid(row=0, column=0, padx=10)
+
+        self.btn_cancelar = ttk.Button(botoes_frame, text="Cancelar", command=self.master.quit)
+        self.btn_cancelar.grid(row=0, column=1, padx=10)
+
+        self.btn_concluir = ttk.Button(botoes_frame, text="Concluir", command=self.limpar_arquivos, state="disabled")
+        self.btn_concluir.grid(row=0, column=2, padx=10)
+
+        # Ajusta tamanho da janela com base no conteúdo
+        self.master.update_idletasks()
+        width = 560
+        height = self.master.winfo_reqheight()
+        x = (self.master.winfo_screenwidth() - width) // 2
+        y = (self.master.winfo_screenheight() - height) // 2
+        master.geometry(f"{width}x{height}+{x}+{y}")
 
     def selecionar_ficheiro_dwg(self):
         ficheiro = filedialog.askopenfilename(filetypes=[("Ficheiros DWG", "*.dwg")])
@@ -128,6 +157,15 @@ class ImportLogsPlanta:
             self.dwg_entry.insert(0, self.ficheiro_dwg)
             self.dwg_entry.config(state="readonly")
 
+    def selecionar_ficheiro_csv(self):
+        ficheiro = filedialog.askopenfilename(filetypes=[("Ficheiros CSV", "*.csv")])
+        if ficheiro:
+            self.ficheiro_csv = ficheiro
+            self.csv_entry.config(state="normal")
+            self.csv_entry.delete(0, tk.END)
+            self.csv_entry.insert(0, self.ficheiro_csv)
+            self.csv_entry.config(state="readonly")
+
     def gerar(self):
         if not self.ficheiro_dwg or not os.path.isfile(self.ficheiro_dwg):
             messagebox.showerror("Erro", "Seleciona um ficheiro DWG válido primeiro!")
@@ -137,14 +175,13 @@ class ImportLogsPlanta:
             for nome in ["ZZZ_ProspBlocks.dwg", "run_logsplanta.scr", "ImportLogsPlanta.lsp"]:
                 shutil.copyfile(ARQUIVOS[nome], os.path.join(self.pasta, nome))
 
-            ficheiros_csv = [f for f in os.listdir(self.pasta) if f.lower().endswith(".csv")]
-            if not ficheiros_csv:
-                messagebox.showerror("Erro", "Nenhum ficheiro .csv encontrado na pasta do DWG.")
+            if not self.ficheiro_csv or not os.path.isfile(self.ficheiro_csv):
+                messagebox.showerror("Erro", "Seleciona um ficheiro CSV válido primeiro!")
                 return
 
             caminho_lsp = os.path.join(self.pasta, "ImportLogsPlanta.lsp")
             caminho_dwg_bloques = os.path.join(self.pasta, "ZZZ_ProspBlocks.dwg").replace("\\", "/")
-            caminho_csv = os.path.join(self.pasta, ficheiros_csv[0]).replace("\\", "/")
+            caminho_csv = self.ficheiro_csv.replace("\\", "/")
 
             with open(caminho_lsp, "r", encoding="utf-8") as f:
                 conteudo_lsp = f.read()
@@ -165,7 +202,6 @@ class ImportLogsPlanta:
             with open(caminho_scr, "w", encoding="utf-8") as f:
                 f.write(conteudo_scr)
 
-            # Executa o AutoCAD com o DWG selecionado e o script
             subprocess.Popen([ACAD_PATH, self.ficheiro_dwg, "/b", caminho_scr])
 
             self.btn_concluir.config(state="normal")
@@ -186,32 +222,40 @@ class ImportLogsPlanta:
             messagebox.showwarning("Aviso", f"Erro ao eliminar ficheiros: {e}")
             self.btn_concluir.config(state="disabled")
 
-
-
 class LogTransform:
     def __init__(self, master):
         self.master = master
-        master.title("LogTransform")
-        master.geometry("500x160")
+        master.title("Modificador de Logs")
+        master.geometry("500x200")
         master.resizable(False, False)
 
         self.pasta = ""
+        self.ficheiro_csv = ""
 
-        titulo = ttk.Label(master, text="LogTransform", font=("Segoe UI", 16, "bold"))
+        titulo = ttk.Label(master, text="Modificador de Logs", font=("Segoe UI", 16, "bold"))
         titulo.pack(pady=(10, 5))
 
         frame = ttk.Frame(master, padding=20)
         frame.pack(fill="both", expand=True)
         frame.columnconfigure(0, weight=1)
 
+        # Linha 0: Pasta
         ttk.Label(frame, text="Pasta:").grid(row=0, column=0, sticky="e", padx=5, pady=5)
         self.pasta_entry = ttk.Entry(frame, width=45, state="readonly")
         self.pasta_entry.grid(row=0, column=1, padx=5, pady=5)
         self.btn_browser = ttk.Button(frame, text="Procurar", command=self.selecionar_pasta)
         self.btn_browser.grid(row=0, column=2, padx=5, pady=5)
 
+        # Linha 1: Ficheiro CSV
+        ttk.Label(frame, text="Ficheiro CSV:").grid(row=1, column=0, sticky="e", padx=5, pady=5)
+        self.csv_entry = ttk.Entry(frame, width=45, state="readonly")
+        self.csv_entry.grid(row=1, column=1, padx=5, pady=5)
+        self.btn_csv_browser = ttk.Button(frame, text="Procurar", command=self.selecionar_ficheiro_csv)
+        self.btn_csv_browser.grid(row=1, column=2, padx=5, pady=5)
+
+        # Linha 2: Escala e botões
         frame_escala = ttk.Frame(frame)
-        frame_escala.grid(row=1, column=0, columnspan=3, sticky="ew", pady=10)
+        frame_escala.grid(row=2, column=0, columnspan=3, sticky="ew", pady=10)
 
         for i in range(5):
             frame_escala.columnconfigure(i, weight=1)
@@ -220,7 +264,7 @@ class LogTransform:
         self.escala_entry = ttk.Entry(frame_escala, width=10)
         self.escala_entry.grid(row=0, column=1, sticky="ew", padx=5)
 
-        self.btn_gerar = ttk.Button(frame_escala, text="Gerar", command=self.gerar)
+        self.btn_gerar = ttk.Button(frame_escala, text="Iniciar", command=self.gerar)
         self.btn_gerar.grid(row=0, column=2, sticky="ew", padx=5)
 
         self.btn_cancelar = ttk.Button(frame_escala, text="Cancelar", command=self.master.quit)
@@ -237,6 +281,15 @@ class LogTransform:
             self.pasta_entry.delete(0, tk.END)
             self.pasta_entry.insert(0, self.pasta)
             self.pasta_entry.config(state="readonly")
+
+    def selecionar_ficheiro_csv(self):
+        ficheiro = filedialog.askopenfilename(filetypes=[("Ficheiros CSV", "*.csv")])
+        if ficheiro:
+            self.ficheiro_csv = ficheiro
+            self.csv_entry.config(state="normal")
+            self.csv_entry.delete(0, tk.END)
+            self.csv_entry.insert(0, self.ficheiro_csv)
+            self.csv_entry.config(state="readonly")
 
     def gerar(self):
         if not self.pasta:
@@ -258,7 +311,11 @@ class LogTransform:
                 conteudo_lsp = f.read()
 
             novo_dwg = os.path.join(caminho_destino, "ZZZ_ProspBlocks.dwg").replace("\\", "/")
-            novo_csv = os.path.join(caminho_destino, "FormatoLogs.csv").replace("\\", "/")
+            if not self.ficheiro_csv or not os.path.isfile(self.ficheiro_csv):
+                messagebox.showerror("Erro", "Seleciona um ficheiro CSV válido primeiro!")
+                return
+            novo_csv = self.ficheiro_csv.replace("\\", "/")
+
             novo_dwg_externo = r"C:\Users\DPC\OneDrive - COBAGroup\Desktop\REVIT_David\SONDAGENS_DWG_TESTES\ProspBlocksTeste.dwg".replace("\\", "/")
 
             conteudo_lsp = re.sub(r'\(setq ficheiro\s+"[^"]+"\)', f'(setq ficheiro "{novo_dwg}")', conteudo_lsp)
@@ -299,7 +356,7 @@ class LogTransform:
 
     def limpar_arquivos(self):
         try:
-            for nome in ["LogTransformMultiple.lsp", "run_sondagens.scr", "ZZZ_ProspBlocks.dwg"]:
+            for nome in ["LogTransformMultiple.lsp", "run_sondagens.scr", "ZZZ_ProspBlocks.dwg", "ImportLogsPlanta.lsp", "run_logsplanta.scr"]:
                 caminho = os.path.join(self.pasta, nome)
                 if os.path.exists(caminho):
                     os.remove(caminho)
@@ -310,8 +367,6 @@ class LogTransform:
             messagebox.showwarning("Aviso", f"Erro ao eliminar ficheiros: {e}")
 
             self.btn_concluir.config(state="disabled")
-
-
 
 if __name__ == "__main__":
     root = tk.Tk()

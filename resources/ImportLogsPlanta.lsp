@@ -97,15 +97,15 @@
     (setq bore    (nth 0 item))
     (setq x       (nth 1 item))
     (setq y       (nth 2 item))
-    (setq z       (nth 3 item))
+    (setq z       (nth 3 item)) ; ← ainda é lido, mas ignorado na posição
     (setq formato (nth 4 item))
     (setq cor     (nth 5 item))
     (setq bloco   (strcat formato "_" cor))
-    (setq pt      (list x y z))
+    (setq pt      (list x y 0.0)) ; ← Z fixado em 0.0
 
     ;; === LAYER POR PREFIXO ===
     (setq prefixo (extrair-prefixo-letras bore))
-    (setq layerNome (strcat "Log_" prefixo))
+    (setq layerNome (strcat "Coba_GEO_Log_" prefixo)) ; ← Prefixo alterado
 
     ;; Cria a layer se necessário
     (if (not (tblsearch "LAYER" layerNome))
